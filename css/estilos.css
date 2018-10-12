@@ -48,7 +48,7 @@
   margin-bottom: 20px;
 }
 
-.login-vice input[type="tex"],
+.login-vice input[type="text"],
 .login-vice input[type="password"]{
   border: none;
   border-bottom: 1px solid #fff;
