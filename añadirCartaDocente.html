@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>AÑADIR CARCA DOCENTE</title>
+	<link rel="stylesheet" href="css/ventana2.css">
+	<link rel="stylesheet" href="css/formularioDocente.css">
+</head>
+<body>
+	<div class="logo logo_main">UATF</div>
+
+	<div class="nav">
+		<div class="wrap">
+				<div class="logo logo_small">UATF</div>
+				<nav>
+					<ul>
+						<li><a href="dictamenDocente.html">DOCENTE</a></li>
+					</ul>
+				</nav>
+		</div>
+	</div>
+
+	<div class="formDocente">
+		<form class="" action="" method="post">
+			<table>
+				<tr>
+					<th><label for="">N° Resolucion</label></th>
+					<th><label for="">N° Dictamen</label></th>
+					<th><label for="">Selecionar Archivo</label></th>
+					<th><label for="">Selecionar Cartas</label></th>
+				</tr>
+				<tr>
+					<td><input type="text" name="resolucion"></td>
+					<td><input type="text" name="dictamen"></td>
+					<td><input type="file" name="pdf" value=""><br></td>
+					<td><input type="file" multiple="true" name="archivos" /><br></td>
+				</tr>
+			</table>
+
+			<textarea class="obs" name="observacion" rows="10" cols="40"></textarea>
+		</form>
+
+	</div>
+
+	<i class="fas fa-ellipsis-v btn-menu"></i>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<script src="js/script.js"></script>
+</body>
+</html>
