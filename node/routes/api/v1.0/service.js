@@ -10,6 +10,12 @@ var Prueba = require("../../../database/collections/prueba");
 var Img = require("../../../database/collections/img");
 var Mapa = require("../../../database/collections/mapa");
 //(img = pdf; user =resoluciones; inmuebles=cartas[docentes, estudiantes])
+
+var Resolucion = require("../../../database/collections/resolucion");
+var Docentes = require("../../../database/collections/docente");
+var Estudiantes = require("../../../database/collections/estudiante");
+var Pdf = require("../../../database/collections/pdf");
+var Carrera = require("../../../database/collections/carrera");
 //Prueba
 
 
@@ -26,6 +32,18 @@ var storage = multer.diskStorage({
   }
 });
 var upload = multer({storage : storage}).single('img');//este es el key con la cual se ingresara la imagen
+
+var storaged = multer.diskStorage({
+  destination: function(req, file, cb){
+    cb(null ,'./public/pdf')//aqui se define el lugar donde se almacena la imagen
+  },
+  filename: function (req, file, cb) {
+    console.log("-------------------------");
+    console.log(file);
+    cb(null, file.originalname + "-" +  Date.now() );
+  }
+});
+var uploadoc = multer({storage : storaged}).single('doc');
 //Prueba*/
 
 /*router.post("/prueba", (req, res) => {
@@ -179,462 +197,68 @@ router.post("/user", (req, res) => {
  });
 });
 
-//mostrar usuarios
+//
+router.post("/raicing", (req, res)=>{
+  var carrera = {
+    nombre : req.body.name,
+    año : req.body.date,
+    per_acd: req.body.ac
+  };
+/*Carrera.findOne({nombre : req.body.name}).exec( (error, docs) => {
 
-router.get("/user", (req, res, next) =>{
-  User.find({}).exec( (error, docs) => {
-      res.status(200).json(docs);
-  })
+})*/
+      var Data = new Carrera(carrera);
+      Data.save().then( () =>{
+        res.status(200).json({
+          "msn" : "exito"
+        });
+      });
 });
 
-//leer solo un usario por id
+//ingresar cartas
+router.post("/resl", (req, res) => {
 
-router.get(/user\/[a-z0-9]{1,}$/, (req, res) => {
-   var url = req.url;
-   var id = url.split("/")[2];
-   User.findOne({_id : id}).exec( (error, docs) => {
-     if (docs != null) {
-         res.status(200).json(docs);
-         return;
-     }
-
+  var c = "sistemas";//necesito esta informacion de la carrera
+  var date = "2018";
+  var periodo = "gestio";
+  var resl = {
+    nr : req.body.nr,
+    nd : req.body.nd
+  };
+Carrera.findOne({nombre : c}).exec( (error, docs) => {
+   if(error){
      res.status(200).json({
-       "msn" : "No existe el usario "
-     });
-   })
- });
-
- //eliminar un usuario
-
- router.delete(/user\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  User.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});
-
-//actualizar un usario
-
-router.put(/user\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys  = Object.keys(req.body);
-  var oficialkeys = ['nombre', 'apellido','email','numeroTelefono',
-                    'password'];
-  var result = _.difference(oficialkeys, keys);
-  if (result.length > 0) {
-    res.status(400).json({
-      "msn" : "Existe  error en el formato de envio puede hacer uso del metodo patch si desea editar solo un fragmentode la informacion"
-    });
-    return;
+       "msn" : error
+     })
+     return
   }
-
-  var user = {
-    nombre : req.body.nombre,
-    apellido : req.body.apellido,
-    email : req.body.email,
-    numeroTelefono : req.body.numeroTelefono,
-    ciudad : req.body.ciudad,
-    direccionActual : req.body.direccionActual,
-    password : req.body.password
-
-  };
-  User.findOneAndUpdate({_id: id}, user, (err, params) => {
-      if(err) {
-        res.status(500).json({
-          "msn": "Error no se pudo actualizar los datos"
-        });
-        return;
-      }
-      res.status(200).json(params);
-      return;
-  });
-});
-
-router.patch(/user\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var user = {};
-  for (var i = 0; i < keys.length; i++) {
-    user[keys[i]] = req.body[keys[i]];
-  }
-  console.log(user);
-  User.findOneAndUpdate({_id: id}, user, (err, params) => {
-      if(err) {
-        res.status(500).json({
-          "msn": "Error no se pudo actualizar los datos"
-        });
-        return;
-      }
-      res.status(200).json(params);
-      return;
-  });
-});
-
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//para el servicio de las casas
-
-//añadiendo inmuebles
-
-router.post("/inmuebles", (req, res) => {
-//router.post(/inmuebles\/[a-z0-9]{1,}$/, (req, res) => {
-  var inmuebles = {
-
-    tipo : req.body.tipo,
-    estado : req.body.estado,
-    precio : req.body.precio,
-    ciudad : req.body.ciudad,
-    region : req.body.region,
-    //ubicacion : "",
-    //direccion : req.body.direccion,
-    descripcion : req.body.descripcion,
-    cantidadCuartos : req.body.cantidadCuartos,
-    cantidadBaños : req.body.cantidadBaños,
-    garage : req.body.garage,
-    superficie : req.body.superficie,
-    lat : req.body.lat,
-    lon : req.body.lon,
-    gallery: "",
-    imagen : "",
-    correo : req.body.correo
-  };
-  User.findOne({email : req.body.correo}).exec((error, docs) => {
-    //User.findOne({
-    if(error){
+     if(docs != null){
+       var id = docs.nombre;
+       var name = docs.id_;
+       resl.id_carrera = name;
+       resl.carrera = id;
+       var resData = new Resolucion(resl);
+       resData.save().then( () => {
+           res.status(200).json({
+             "msn" : "Registrado con exito"
+           })
+       }).catch((err) => {
+         res.status(400).json({
+           "msn" : err
+         })
+       });
+   }
+   else{
       res.status(200).json({
-        "msn" : error
-      })
-      return
-    }
-    if(docs != null){
-      var id= docs._id;
-      inmuebles.user = id;
-
-      //console.log(inmuebles);
-      var casaData = new Inmuebles(inmuebles);
-      var id_in = casaData._id;
-      casaData.save().then( () => {
-          res.status(200).json({
-            "msn" : "Registrado con exito",
-            "imn" : id_in
-
-          })
-
-      }).catch((err) => {
-        res.status(400).json({
-          "msn" : err
-        })
-      });
-    }
-    else{
-      res.status(200).json({
-        "msn" : "El usuario no esta Registrado"
+        "msn" : "la carrera no esta Registrado"
       })
     }
-  })
-  });
 
-// post inmuebles por id
-router.post(/inmuebles_id\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-//router.post(/inmuebles\/[a-z0-9]{1,}$/, (req, res) => {
-  var inmuebles = {
-
-    tipo : req.body.tipo,
-    estado : req.body.estado,
-    precio : req.body.precio,
-    ciudad : req.body.ciudad,
-    region : req.body.region,
-    //ubicacion : "",
-    //direccion : req.body.direccion,
-    descripcion : req.body.descripcion,
-    cantidadCuartos : req.body.cantidadCuartos,
-    cantidadBaños : req.body.cantidadBaños,
-    garage : req.body.garage,
-    superficie : req.body.superficie,
-    lat : req.body.lat,
-    lon : req.body.lon,
-    gallery: "",
-    imagen : "",
-    correo : req.body.correo
-  };
-  User.findOne({email : req.body.correo}).exec((error, docs) => {
-    //User.findOne({
-    if(error){
-      res.status(200).json({
-        "msn" : error
-      })
-      return
-    }
-    if(docs != null){
-      var id= docs._id;
-      inmuebles.user = id;
-
-      //console.log(inmuebles);
-      var casaData = new Inmuebles(inmuebles);
-      var id_in = casaData._id;
-      casaData.save().then( () => {
-          res.status(200).json({
-            "msn" : "Registrado con exito",
-            "imn" : id_in
-
-          })
-
-      }).catch((err) => {
-        res.status(400).json({
-          "msn" : err
-        })
-      });
-    }
-    else{
-      res.status(200).json({
-        "msn" : "El usuario no esta Registrado"
-      })
-    }
-  })
-  });
-
-//mostrar inmuebles+-
-
-
-//tipo , precio , ciudad ,descripcion
-router.get("/inmuebles_ecp", (req, res, next) =>{
-  Inmuebles.find({}).exec( (error, docs) => {
-      res.status(200).json({docs});
-    })
-  });
-
-
-//ruta para listar los libros mas la informacion completaa del autor
-router.get("/inmuebles", (req, res, next) => {
-  //aqui utilizamos populate() para poblar el parametro "autor" con toda la info acerca del mismo
-  Inmuebles.find({}).populate("user").exec( (error, docs) => {
-    //checkeamos hay error de algun tipo
-    if (error) {
-      //devolvemos el error;
-      res.status(400).json({error : error});return;
-    }else{
-      res.status(200).json({
-
-          //Podriamos devolver los documentos tal cual los recibimos;
-          //pero tb podemos remapearlos (si vale el termino) segun nuestros requerimientos
-          //Por ej. : usamos la funcion map() de javascript ;
-
-        Inmuebles : docs.map(doc => {
-          return {
-            //aqui reesctructuramos cada documento
-            detalleInmueble : {
-
-              tipo : doc.tipo,
-              estado : doc.estado,
-              precio : doc.precio,
-
-              superficie : doc.superficie
-            },
-            detalleUser : doc.user,
-            //Aqui tambien podemos devolver algun tipo de mensaje u otro que veamos conveniente
-            status : 'OK'
-          }
-        })
-      });
-    }
-  })
-});
-
-
-// eliminar inmuebles
-
-router.delete(/inmuebles\/[a-z0-9]{1,}$/, (req, res) => {
- var url = req.url;
- var id = url.split("/")[2];
- Inmuebles.find({_id : id}).remove().exec( (err, docs) => {
-     res.status(200).json(docs);
  });
 });
 
 
-// eliminar inmuebles
-
-router.get("/id_inm", (req, res, next) =>{
-  Inmuebles.find({}).exec( (error, docs) => {
-      res.status(200).json(docs);
-  })
-});
-
-router.get("/id_user", (req, res, next) =>{
-  User.find({}).exec( (error, docs) => {
-      res.status(200).json({docs });
-      return;
-  })
-});
-
-router.get(/homeid\/[a-z0-9]{1,}$/, (req, res) =>{
-  var url = req.url;
-  var id = url.split("/")[2];
-  console.log(id+"<---");
-  Inmuebles.find({user : id}).exec( (err, homes) => {
-    if(err){
-      res.status(500).json({
-        "msn": "No se encuentra el usuario"
-      });
-      return;
-    }
-    else{
-      res.status(200).json({homes});
-      return;
-    }
-  })
-
-});
-
-
-
-router.patch(/user\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var user = {};
-  for (var i = 0; i < keys.length; i++) {
-    user[keys[i]] = req.body[keys[i]];
-  }
-  console.log(user);
-  User.findOneAndUpdate({_id: id}, user, (err, params) => {
-      if(err) {
-        res.status(500).json({
-          "msn": "Error no se pudo actualizar los datos"
-        });
-        return;
-      }
-      res.status(200).json(params);
-      return;
-  });
-});
-
-//mapas
-router.post(/mapa\/[a-z0-9]{1,}$/, (req, res) => {
-  var url= req.url;
-  var id = url.split("/")[2];
-  //Ejemplo de validacion
-  if (req.body.name == "" && req.body.email == "") {
-    res.status(400).json({
-      "msn" : "formato incorrecto"
-    });
-    return;
-  }
-  var mapa = {
-    calle : req.body.street,
-    descripcion : req.body.descripcion,
-    lat : req.body.lat,
-    lon : req.body.lon,
-    vecinos : req.body.neighborhood,
-    ciudad : req.body.city,
-    contact: req.body.contact
-  };
-  var mapaData = new Mapa(mapa);
-
-  mapaData.save().then( (rr) => {
-
-    var mp = {
-      ubicacion: new Array()
-    }
-    Inmuebles.findOne({_id:id}).exec( (error, docs) => {
-      var dt = docs.ubicacion;
-      var aux = new Array();
-      if (dt.length == 1 && dt[0] == ""){
-        mp.ubicacion.push("/api/v1.0/mapa/")
-      }
-      else {
-        aux.push("/api/v1.0/mapa/");
-        dt = dt.concat(aux);
-        mp.ubicacion = dt;
-      }
-      Inmuebles.findOneAndUpdate({_id : id}, mp, (err, params) => {
-          if(err){
-            res.status(500).json({
-              "msn" : "error"
-            });
-            return;
-          }
-          res.status(200).json(req.file);
-          return;
-      });
-    });
-    //content-type
-    res.status(200).json({
-      "id" : rr._id,
-      "msn" : "mapa Registrado con exito "
-    });
-  });
-});
-
-router.patch(/inmuebles\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  var keys = Object.keys(req.body);
-  var user = {};
-  for (var i = 0; i < keys.length; i++) {
-    user[keys[i]] = req.body[keys[i]];
-  }
-  console.log(user);
-  Inmuebles.findOneAndUpdate({_id: id}, user, (err, params) => {
-      if(err) {
-        res.status(500).json({
-          "msn": "Error no se pudo actualizar los datos"
-        });
-        return;
-      }
-      res.status(200).json(params);
-      //"doc" : params.id
-      return;
-  });
-});
-//recuperar el array de la mapa
-router.get(/mapa\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  console.log(id)
-  Mapa.findOne({_id: id}).exec((err, docs) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Sucedio algun error en el servicio"
-      });
-      return;
-    }
-    else{
-          res.status(200).json({docs});
-    }
-  });
-});
-
-//para cargar la imagen de los inmuebles
-
-router.post("/userimg", (req, res) => {
-  upload(req, res, (error) => {
-    if(error){
-      res.status(500).json({
-        "msn" : "No se ha podido subir la imagen"
-
-      });
-    }else{
-      var ruta = req.file.path.substr(6, req.file.path.length);
-      console.log(ruta);
-      var img = {
-        name : req.file.originalname,
-        idhome: req.file.path,
-        physicalpath : req.file.path,
-        relativepath : "http://localhost:7777" + ruta
-      };
-      var imDato = new Img(img);
-        imDato.save().then( () => {
-          res.status(200).json( req.file);
-        });
-    }
-  });
-});
+//mostrar usuarios
 
 
 //en la url se envia con la id del inmueble registrado
@@ -723,6 +347,104 @@ router.post(/homeimg\/[a-z0-9]{1,}$/, (req, res) => {
     }
   });
 });
+///ingresar el documentos
+/*router.post("/documentos", (req, res) => {
+  //
+  //var url = req.url;
+  uploadoc(req, res, (err) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "No se ha podido subir el documento"
+      });
+    } else {
+      var ruta = req.file.path.substr(6, req.file.path.length);
+      console.log(ruta);
+      var pdf = {
+        //iddoc: id,
+        name : req.file.originalname,
+        physicalpath: req.file.path,
+        relativepath: "http://localhost:7777" + ruta
+      };
+      var pdfData = new Pdf(pdf);
+      pdfData.save().then( (infoimg) => {
+        //content-type
+        //Update User IMG
+        var home = {
+          gallery: new Array(),
+          //imagen : new Array(),
+          //picture : new Array()
+        }
+        var foto = "http://localhost:7777" + ruta;
+
+        console.log("ruta del documento"+" " +foto +" "+ "documentos llll ruta");
+
+
+      Resolucion.findOne({_id:id}).exec( (err, docs) =>{
+          //console.log(docs);
+
+          //var data = docs.gallery;
+          //var ph = docs.imagen;
+          //var data_img = docs.picture;
+          var aux = new  Array();
+          //var phaux = new Array();
+          //var daa_aux = new Array();
+          if (data.length == 1 && data[0] == "") {
+            //aqui se pone la ip de la maquina donde esta corriendo , es decir nuestra ip
+          //  home.gallery.push("/api/v1.0/homeimg/" + infoimg._id);
+              home.gallery.push("/api/v1.0/documentos/" + infoimg);
+            //home.imagen.push("http://localhost:7777" + ruta );
+          //  home.picture.push("/api/v1.0/homeimg/" + infoimg._id);
+            //photo.imagen.push(picture);
+            res.status(500).json({
+              "msn" : "error en la actualizacion de la imagen"
+            });
+
+            return;
+
+          }
+          //console.log("picture" +" "+ data_img[0]);
+        /*  if(data_img.length == 0 && data_img[0] == "null"){
+            home.picture.push("/api/v1.0/homeimg/" + infoimg._id);
+          }*/
+
+        /* else {
+            // aqui tambien nuestra ip
+            aux.push("/api/v1.0/documentos/" + infoimg._id);
+            //phaux.push("http://localhost:7777" + ruta);
+            //daa_aux.push("/api/v1.0/documentos/" + infoimg._id);
+            //phaux.push(picture);
+            data = data.concat(aux);
+            //ph = ph.concat(phaux);
+            data_img = data.concat(daa_aux);
+            home.gallery = data;
+            //home.imagen = ph;
+            res.status(200).json({"msn" :"bien"});
+            return;
+
+          }
+          res.status(500).json({
+            "msn" : "error en la actualizacion de la imagen"
+          });
+          return;*/
+        /*  Inmuebles.findOneAndUpdate({_id : id}, home, (err, params) => {
+              if (err) {
+                res.status(500).json({
+                  "msn" : "error en la actualizacion de la imagen"
+                });
+                return;
+              }
+              res.status(200).json(
+                req.file
+
+              );
+              return;
+          });*/
+
+        //});
+    //  });
+    //}
+  //});
+//});
 //obtener la imagen
 //en la url se envia con la id de la foto o imagen registrada
 router.get(/homeimg\/[a-z0-9]{1,}$/, (req, res) => {
