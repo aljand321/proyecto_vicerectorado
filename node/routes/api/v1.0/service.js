@@ -6,7 +6,6 @@ var router = express.Router();
 var fs = require('fs');
 var User = require("../../../database/collections/user");
 var Inmuebles = require("../../../database/collections/inmuebles");
-var Prueba = require("../../../database/collections/prueba");
 var Img = require("../../../database/collections/img");
 var Mapa = require("../../../database/collections/mapa");
 //(img = pdf; user =resoluciones; inmuebles=cartas[docentes, estudiantes])
